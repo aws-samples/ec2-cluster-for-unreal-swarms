@@ -1,0 +1,12 @@
+{
+  "app": "python3 app.py",
+  "context": {
+    "@aws-cdk/core:enableStackNameDuplicates": "true",
+    "aws-cdk:enableDiffNoFail": "true",
+    "@aws-cdk/core:stackRelativeExports": "true",
+    "vpc_cidr": "10.0.0.0/16",
+    "trusted_cidr": "10.0.0.0/8",
+    "agent_instancy_type": "t3.xlarge",
+    "coordinator_instancy_type": "t3.large"
+  }
+}

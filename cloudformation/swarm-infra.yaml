@@ -1,0 +1,298 @@
+Resources:
+  ue4swarmbucketFCE52A18:
+    Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: swarm-infra/ue4-swarm-bucket/Resource
+  SwarmVPCBD3E3386:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Resource
+  SwarmVPCSwarmPublicSubnet1Subnet68AF46CE:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/18
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Swarm-Public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1/Subnet
+  SwarmVPCSwarmPublicSubnet1RouteTableB9D2A52E:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1/RouteTable
+  SwarmVPCSwarmPublicSubnet1RouteTableAssociation7A27F9BD:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPublicSubnet1RouteTableB9D2A52E
+      SubnetId:
+        Ref: SwarmVPCSwarmPublicSubnet1Subnet68AF46CE
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1/RouteTableAssociation
+  SwarmVPCSwarmPublicSubnet1DefaultRoute6D98198A:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPublicSubnet1RouteTableB9D2A52E
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: SwarmVPCIGW4D16EC27
+    DependsOn:
+      - SwarmVPCVPCGW9D5EF4D0
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1/DefaultRoute
+  SwarmVPCSwarmPublicSubnet1EIPA2B8752B:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1/EIP
+  SwarmVPCSwarmPublicSubnet1NATGatewayC7F4C94B:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - SwarmVPCSwarmPublicSubnet1EIPA2B8752B
+          - AllocationId
+      SubnetId:
+        Ref: SwarmVPCSwarmPublicSubnet1Subnet68AF46CE
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet1/NATGateway
+  SwarmVPCSwarmPublicSubnet2Subnet2939B1DC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.64.0/18
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Swarm-Public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PublicSubnet2
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet2/Subnet
+  SwarmVPCSwarmPublicSubnet2RouteTableAA2D1291:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PublicSubnet2
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet2/RouteTable
+  SwarmVPCSwarmPublicSubnet2RouteTableAssociation263F1174:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPublicSubnet2RouteTableAA2D1291
+      SubnetId:
+        Ref: SwarmVPCSwarmPublicSubnet2Subnet2939B1DC
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet2/RouteTableAssociation
+  SwarmVPCSwarmPublicSubnet2DefaultRouteC73F3024:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPublicSubnet2RouteTableAA2D1291
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: SwarmVPCIGW4D16EC27
+    DependsOn:
+      - SwarmVPCVPCGW9D5EF4D0
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PublicSubnet2/DefaultRoute
+  SwarmVPCSwarmPrivateSubnet1Subnet80CE24A1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.128.0/18
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Swarm-Private
+        - Key: aws-cdk:subnet-type
+          Value: Private
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet1/Subnet
+  SwarmVPCSwarmPrivateSubnet1RouteTable61575E59:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet1/RouteTable
+  SwarmVPCSwarmPrivateSubnet1RouteTableAssociation03849ECB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPrivateSubnet1RouteTable61575E59
+      SubnetId:
+        Ref: SwarmVPCSwarmPrivateSubnet1Subnet80CE24A1
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet1/RouteTableAssociation
+  SwarmVPCSwarmPrivateSubnet1DefaultRouteAB9BFF7A:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPrivateSubnet1RouteTable61575E59
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: SwarmVPCSwarmPublicSubnet1NATGatewayC7F4C94B
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet1/DefaultRoute
+  SwarmVPCSwarmPrivateSubnet2Subnet090387FF:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.192.0/18
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ""
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Swarm-Private
+        - Key: aws-cdk:subnet-type
+          Value: Private
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet2
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet2/Subnet
+  SwarmVPCSwarmPrivateSubnet2RouteTable41E63F76:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet2
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet2/RouteTable
+  SwarmVPCSwarmPrivateSubnet2RouteTableAssociation305321F9:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPrivateSubnet2RouteTable41E63F76
+      SubnetId:
+        Ref: SwarmVPCSwarmPrivateSubnet2Subnet090387FF
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet2/RouteTableAssociation
+  SwarmVPCSwarmPrivateSubnet2DefaultRouteB0DD1E30:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: SwarmVPCSwarmPrivateSubnet2RouteTable41E63F76
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: SwarmVPCSwarmPublicSubnet1NATGatewayC7F4C94B
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/Swarm-PrivateSubnet2/DefaultRoute
+  SwarmVPCIGW4D16EC27:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: swarm-infra/Swarm-VPC
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/IGW
+  SwarmVPCVPCGW9D5EF4D0:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: SwarmVPCBD3E3386
+      InternetGatewayId:
+        Ref: SwarmVPCIGW4D16EC27
+    Metadata:
+      aws:cdk:path: swarm-infra/Swarm-VPC/VPCGW
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Modules: aws-cdk=1.89.0,@aws-cdk/assets=1.91.0,@aws-cdk/aws-applicationautoscaling=1.91.0,@aws-cdk/aws-autoscaling=1.91.0,@aws-cdk/aws-autoscaling-common=1.91.0,@aws-cdk/aws-certificatemanager=1.91.0,@aws-cdk/aws-cloudformation=1.91.0,@aws-cdk/aws-cloudwatch=1.91.0,@aws-cdk/aws-codeguruprofiler=1.91.0,@aws-cdk/aws-ec2=1.91.0,@aws-cdk/aws-ecr=1.91.0,@aws-cdk/aws-ecr-assets=1.91.0,@aws-cdk/aws-efs=1.91.0,@aws-cdk/aws-elasticloadbalancing=1.91.0,@aws-cdk/aws-elasticloadbalancingv2=1.91.0,@aws-cdk/aws-events=1.91.0,@aws-cdk/aws-iam=1.91.0,@aws-cdk/aws-imagebuilder=1.91.0,@aws-cdk/aws-kms=1.91.0,@aws-cdk/aws-lambda=1.91.0,@aws-cdk/aws-logs=1.91.0,@aws-cdk/aws-route53=1.91.0,@aws-cdk/aws-s3=1.91.0,@aws-cdk/aws-s3-assets=1.91.0,@aws-cdk/aws-sns=1.91.0,@aws-cdk/aws-sqs=1.91.0,@aws-cdk/aws-ssm=1.91.0,@aws-cdk/cloud-assembly-schema=1.91.0,@aws-cdk/core=1.91.0,@aws-cdk/custom-resources=1.91.0,@aws-cdk/cx-api=1.91.0,@aws-cdk/region-info=1.91.0,jsii-runtime=Python/3.9.1
+    Metadata:
+      aws:cdk:path: swarm-infra/CDKMetadata/Default
+Outputs:
+  BucketName:
+    Description: Swarm Bucket Name
+    Value:
+      Ref: ue4swarmbucketFCE52A18
+  ExportsOutputFnGetAttue4swarmbucketFCE52A18Arn2B326C3E:
+    Value:
+      Fn::GetAtt:
+        - ue4swarmbucketFCE52A18
+        - Arn
+    Export:
+      Name: swarm-infra:ExportsOutputFnGetAttue4swarmbucketFCE52A18Arn2B326C3E
+  ExportsOutputRefSwarmVPCBD3E33869159DD07:
+    Value:
+      Ref: SwarmVPCBD3E3386
+    Export:
+      Name: swarm-infra:ExportsOutputRefSwarmVPCBD3E33869159DD07
+  ExportsOutputRefue4swarmbucketFCE52A18974D2A52:
+    Value:
+      Ref: ue4swarmbucketFCE52A18
+    Export:
+      Name: swarm-infra:ExportsOutputRefue4swarmbucketFCE52A18974D2A52
+  ExportsOutputRefSwarmVPCSwarmPrivateSubnet1Subnet80CE24A1CA52A385:
+    Value:
+      Ref: SwarmVPCSwarmPrivateSubnet1Subnet80CE24A1
+    Export:
+      Name: swarm-infra:ExportsOutputRefSwarmVPCSwarmPrivateSubnet1Subnet80CE24A1CA52A385
+  ExportsOutputRefSwarmVPCSwarmPrivateSubnet2Subnet090387FF4A3C79E6:
+    Value:
+      Ref: SwarmVPCSwarmPrivateSubnet2Subnet090387FF
+    Export:
+      Name: swarm-infra:ExportsOutputRefSwarmVPCSwarmPrivateSubnet2Subnet090387FF4A3C79E6
+

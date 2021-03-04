@@ -1,0 +1,487 @@
+Resources:
+  SwarmInstanceRole6BCAB0C0:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/EC2InstanceProfileForImageBuilder
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: s3:GetObject
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ""
+                    - - Fn::ImportValue: swarm-infra:ExportsOutputFnGetAttue4swarmbucketFCE52A18Arn2B326C3E
+                      - /*
+            Version: "2012-10-17"
+          PolicyName: "0"
+    Metadata:
+      aws:cdk:path: swarm-deployment/SwarmInstanceRole/Resource
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: SwarmInstanceRole6BCAB0C0
+      InstanceProfileName: ue4-swarm-instance-profile
+      Path: /executionServiceEC2Role/
+    Metadata:
+      aws:cdk:path: swarm-deployment/InstanceProfile
+  SecurityGroupDD263621:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for UE4 Swarm
+      GroupName: Allow UE4 Swarm communication
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 10.0.0.0/8
+          Description: Allow Trusted IP Swarm TCP
+          FromPort: 8008
+          IpProtocol: tcp
+          ToPort: 8009
+        - CidrIp: 10.0.0.0/8
+          Description: Allow Trusted IP Swarm ICMP Ping
+          FromPort: 8
+          IpProtocol: icmp
+          ToPort: -1
+        - CidrIp: 10.0.0.0/8
+          Description: Allow Trusted IP RDP TCP
+          FromPort: 3389
+          IpProtocol: tcp
+          ToPort: 3389
+      VpcId:
+        Fn::ImportValue: swarm-infra:ExportsOutputRefSwarmVPCBD3E33869159DD07
+    Metadata:
+      aws:cdk:path: swarm-deployment/SecurityGroup/Resource
+  SecurityGroupfromswarmdeploymentSecurityGroup5FE8F0348008800950569849:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: Allow SG Swarm TCP
+      FromPort: 8008
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupDD263621
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - SecurityGroupDD263621
+          - GroupId
+      ToPort: 8009
+    Metadata:
+      aws:cdk:path: swarm-deployment/SecurityGroup/from swarmdeploymentSecurityGroup5FE8F034:8008-8009
+  SecurityGroupfromswarmdeploymentSecurityGroup5FE8F034ICMPType869D8BFE1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: icmp
+      Description: Allow SG Swarm ICMP Ping
+      FromPort: 8
+      GroupId:
+        Fn::GetAtt:
+          - SecurityGroupDD263621
+          - GroupId
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - SecurityGroupDD263621
+          - GroupId
+      ToPort: -1
+    Metadata:
+      aws:cdk:path: swarm-deployment/SecurityGroup/from swarmdeploymentSecurityGroup5FE8F034:ICMP Type 8
+  SwarmComponent:
+    Type: AWS::ImageBuilder::Component
+    Properties:
+      Name: Install-Swarm-Dependencies
+      Platform: Windows
+      Version: 1.0.0
+      Data:
+        Fn::Join:
+          - ""
+          - - >-
+              name: InstallUE4Swarm
+
+              description: This component installs UE4 Swarm from S3 archive and also installs all prerequirements for a build.
+
+              schemaVersion: 1.0
+
+
+              phases:
+                - name: build
+                  steps:
+                    - name: CreateTempFolder
+                      action: CreateFolder
+                      inputs:
+                        - path: C:\ue4-swarm-temp
+                    - name: DownloadDependencies
+                      action: S3Download
+                      maxAttempts: 3
+                      inputs:
+                          - source: s3://
+            - Fn::ImportValue: swarm-infra:ExportsOutputRefue4swarmbucketFCE52A18974D2A52
+            - >-
+              /ue4-swarm-archive.zip
+                            destination: C:\ue4-swarm-temp\ue4-swarm-archive.zip
+                    - name: CreateSwarmFolder
+                      action: CreateFolder
+                      inputs:
+                        - path: C:\ue4-swarm
+                    - name: UncompressSwarmFiles
+                      action: ExecutePowerShell
+                      inputs:
+                        commands: 
+                            - Expand-Archive -LiteralPath C:\ue4-swarm-temp\ue4-swarm-archive.zip -DestinationPath C:\ue4-swarm
+                    - name: DeleteTempFolder
+                      action: DeleteFolder
+                      inputs:
+                        - path: C:\ue4-swarm-temp
+                          force: true
+                    - name: InstallDotNet
+                      action: ExecutePowerShell
+                      inputs:
+                        commands: 
+                            - Install-WindowsFeature Net-Framework-Core
+                    - name: InstallPreReqs
+                      action: ExecutePowerShell
+                      inputs:
+                        commands: 
+                            - Start-Process -Wait -FilePath "C:\ue4-swarm\UE4PrereqSetup_x64.exe" -ArgumentList "/install /quiet"
+                    - name: OpenFirewall
+                      action: ExecutePowerShell
+                      inputs:
+                        commands: 
+                            - New-NetFirewallRule -DisplayName 'Allow UE4 Swarm TCP' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8008-8009
+                            - New-NetFirewallRule -DisplayName 'Allow UE4 Swarm UDP' -Direction Inbound -Action Allow -Protocol UDP -LocalPort 8008-8009
+                            - New-NetFirewallRule -DisplayName 'Allow ICMP' -Direction Inbound -Action Allow -Protocol ICMPv4
+    Metadata:
+      aws:cdk:path: swarm-deployment/SwarmComponent
+  SwarmInfraConfig:
+    Type: AWS::ImageBuilder::InfrastructureConfiguration
+    Properties:
+      InstanceProfileName: ue4-swarm-instance-profile
+      Name: UE4-Swarm-WindowsServer-2019-Infra-Config
+      InstanceTypes:
+        - m5.large
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - SecurityGroupDD263621
+            - GroupId
+      SubnetId:
+        Fn::ImportValue: swarm-infra:ExportsOutputRefSwarmVPCSwarmPrivateSubnet1Subnet80CE24A1CA52A385
+    DependsOn:
+      - InstanceProfile
+    Metadata:
+      aws:cdk:path: swarm-deployment/SwarmInfraConfig
+  ImageRecipe:
+    Type: AWS::ImageBuilder::ImageRecipe
+    Properties:
+      Components:
+        - ComponentArn:
+            Fn::GetAtt:
+              - SwarmComponent
+              - Arn
+      Name: UE4-Swarm-Image
+      ParentImage:
+        Ref: SsmParameterValueawsserviceamiwindowslatestWindowsServer2019EnglishFullBaseC96584B6F00A464EAD1953AFF4B05118Parameter
+      Version: 1.0.0
+    Metadata:
+      aws:cdk:path: swarm-deployment/ImageRecipe
+  SwarmImage:
+    Type: AWS::ImageBuilder::Image
+    Properties:
+      ImageRecipeArn:
+        Fn::GetAtt:
+          - ImageRecipe
+          - Arn
+      InfrastructureConfigurationArn:
+        Fn::GetAtt:
+          - SwarmInfraConfig
+          - Arn
+    Metadata:
+      aws:cdk:path: swarm-deployment/SwarmImage
+  ue4swarmcoordinatorInstanceProfile1A74E600:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: SwarmInstanceRole6BCAB0C0
+    Metadata:
+      aws:cdk:path: swarm-deployment/ue4-swarm-coordinator/InstanceProfile
+  ue4swarmcoordinator743D2823:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ""
+      IamInstanceProfile:
+        Ref: ue4swarmcoordinatorInstanceProfile1A74E600
+      ImageId:
+        Fn::GetAtt:
+          - SwarmImage
+          - ImageId
+      InstanceType: t3.large
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - SecurityGroupDD263621
+            - GroupId
+      SubnetId:
+        Fn::ImportValue: swarm-infra:ExportsOutputRefSwarmVPCSwarmPrivateSubnet1Subnet80CE24A1CA52A385
+      Tags:
+        - Key: Name
+          Value: swarm-deployment/ue4-swarm-coordinator
+      UserData:
+        Fn::Base64: >-
+          <powershell>
+
+          ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+          ## SPDX-License-Identifier: MIT-0
+
+
+          # Define the Swarm Coordinator to start as a Scheduled task at startup
+
+          $action = New-ScheduledTaskAction -Execute "C:\ue4-swarm\SwarmCoordinator.exe"
+
+          $trigger = New-ScheduledTaskTrigger -AtStartup
+
+          $principal = New-ScheduledTaskPrincipal -UserID "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+
+          Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName "SwarmCoordinator" -Description "UE4 Swarm Coordinator"
+
+
+          # Restart the instance to trigger the Schedule task.
+
+          Restart-Computer
+
+          </powershell>
+    DependsOn:
+      - SwarmInstanceRole6BCAB0C0
+    Metadata:
+      aws:cdk:path: swarm-deployment/ue4-swarm-coordinator/Resource
+  ue4swarmagentInstanceProfileE2056578:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: SwarmInstanceRole6BCAB0C0
+    Metadata:
+      aws:cdk:path: swarm-deployment/ue4-swarm-agent/InstanceProfile
+  ue4swarmagentLaunchConfigC9C7E35F:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        Fn::GetAtt:
+          - SwarmImage
+          - ImageId
+      InstanceType: t3.xlarge
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            DeleteOnTermination: true
+            VolumeSize: 100
+      IamInstanceProfile:
+        Ref: ue4swarmagentInstanceProfileE2056578
+      SecurityGroups:
+        - Fn::GetAtt:
+            - SecurityGroupDD263621
+            - GroupId
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+            - ""
+            - - >-
+                <powershell>
+
+                ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+                ## SPDX-License-Identifier: MIT-0
+
+
+                # Define Coordinator IP, Cloudformation replaces this when task is been created
+
+                $coordinator_ip = "
+              - Fn::GetAtt:
+                  - ue4swarmcoordinator743D2823
+                  - PrivateIp
+              - >-
+                "
+
+
+                # Template of the Swarm Agent Developper Options file
+
+                $developeroptions = '<?xml version="1.0"?>
+
+                <SettableDeveloperOptions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  <LocalEnableLocalPerformanceMonitoring>true</LocalEnableLocalPerformanceMonitoring>
+                  <LocalJobsDefaultProcessorCount>LOCALCORES</LocalJobsDefaultProcessorCount>
+                  <LocalJobsDefaultProcessPriority>BelowNormal</LocalJobsDefaultProcessPriority>
+                  <RemoteJobsDefaultProcessorCount>REMOTECORES</RemoteJobsDefaultProcessorCount>
+                  <RemoteJobsDefaultProcessPriority>Idle</RemoteJobsDefaultProcessPriority>
+                  <UpdateAutomatically>false</UpdateAutomatically>
+                  <OptionsVersion>15</OptionsVersion>
+                </SettableDeveloperOptions>'
+
+
+                # Calculate number of cores
+
+                $cores = (Get-WmiObject -Class Win32_Processor | Select-Object -Property NumberOfLogicalProcessors).NumberOfLogicalProcessors
+
+
+                # Set the core values for the Swarm Agent
+
+                $developeroptions = $developeroptions.replace("REMOTECORES", $cores)
+
+                $developeroptions = $developeroptions.replace("LOCALCORES", $cores-1)
+
+
+                # Save the configureation file
+
+                $developeroptions | Out-File -FilePath "C:\ue4-swarm\SwarmAgent.DeveloperOptions.xml"
+
+
+                # Template of the Swarm Options file
+
+                $agentoptions = '<?xml version="1.0"?>
+
+                <SettableOptions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  <SerialisableColours>
+                    <SerialisableColour LocalColour="-1" />
+                    <SerialisableColour LocalColour="-1" />
+                    <SerialisableColour LocalColour="-1" />
+                    <SerialisableColour LocalColour="-1" />
+                    <SerialisableColour LocalColour="-5658199" />
+                    <SerialisableColour LocalColour="-5658199" />
+                    <SerialisableColour LocalColour="-5658199" />
+                    <SerialisableColour LocalColour="-2894893" />
+                    <SerialisableColour LocalColour="-1" />
+                    <SerialisableColour LocalColour="-7667712" />
+                    <SerialisableColour LocalColour="-7667712" />
+                    <SerialisableColour LocalColour="-2987746" />
+                    <SerialisableColour LocalColour="-2987746" />
+                    <SerialisableColour LocalColour="-16777077" />
+                    <SerialisableColour LocalColour="-16777077" />
+                    <SerialisableColour LocalColour="-16777077" />
+                    <SerialisableColour LocalColour="-16777077" />
+                    <SerialisableColour LocalColour="-16777077" />
+                    <SerialisableColour LocalColour="-16777077" />
+                    <SerialisableColour LocalColour="-7278960" />
+                    <SerialisableColour LocalColour="-16744448" />
+                    <SerialisableColour LocalColour="-16711681" />
+                    <SerialisableColour LocalColour="-8388480" />
+                    <SerialisableColour LocalColour="-16744448" />
+                    <SerialisableColour LocalColour="-16777216" />
+                    <SerialisableColour LocalColour="-16777216" />
+                    <SerialisableColour LocalColour="-16777216" />
+                  </SerialisableColours>
+                  <AllowedRemoteAgentNames>*</AllowedRemoteAgentNames>
+                  <AllowedRemoteAgentGroup>ue4-swarm-aws</AllowedRemoteAgentGroup>
+                  <AgentGroupName>ue4-swarm-aws</AgentGroupName>
+                  <CoordinatorRemotingHost>COORDINATORHOST</CoordinatorRemotingHost>
+                  <CacheFolder>C:\ue4-swarm/SwarmCache</CacheFolder>
+                  <MaximumJobsToKeep>5</MaximumJobsToKeep>
+                  <BringToFront>false</BringToFront>
+                  <ShowDeveloperMenu>true</ShowDeveloperMenu>
+                  <OptionsVersion>15</OptionsVersion>
+                  <WindowLocation>
+                    <X>0</X>
+                    <Y>0</Y>
+                  </WindowLocation>
+                  <WindowSize>
+                    <Width>768</Width>
+                    <Height>768</Height>
+                  </WindowSize>
+                  <AgentTabIndex>2</AgentTabIndex>
+                  <VisualiserZoomLevel>4</VisualiserZoomLevel>
+                </SettableOptions>'
+
+
+                # Replace the Coordinator IP in the template
+
+                $agentoptions = $agentoptions.replace("COORDINATORHOST", $coordinator_ip)
+
+
+                # Save the configuration file
+
+                $agentoptions | Out-File -FilePath "C:\ue4-swarm\SwarmAgent.Options.xml"
+
+
+                # Define the Swarm agent as Scheduled Task that starts at instance boot
+
+                $action = New-ScheduledTaskAction -Execute "C:\ue4-swarm\SwarmAgent.exe"
+
+                $trigger = New-ScheduledTaskTrigger -AtStartup
+
+                $principal = New-ScheduledTaskPrincipal -UserID "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+
+                Register-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -TaskName "SwarmAgent" -Description "UE4 Swarm Agent"
+
+
+                # Restart the instance to trigger the Swarm Agent Scheduled Task
+
+                Restart-Computer
+
+                </powershell>
+    DependsOn:
+      - SwarmInstanceRole6BCAB0C0
+    Metadata:
+      aws:cdk:path: swarm-deployment/ue4-swarm-agent/LaunchConfig
+  ue4swarmagentASG86631DEA:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MaxSize: "1"
+      MinSize: "1"
+      DesiredCapacity: "1"
+      LaunchConfigurationName:
+        Ref: ue4swarmagentLaunchConfigC9C7E35F
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: swarm-deployment/ue4-swarm-agent
+      VPCZoneIdentifier:
+        - Fn::ImportValue: swarm-infra:ExportsOutputRefSwarmVPCSwarmPrivateSubnet1Subnet80CE24A1CA52A385
+        - Fn::ImportValue: swarm-infra:ExportsOutputRefSwarmVPCSwarmPrivateSubnet2Subnet090387FF4A3C79E6
+    UpdatePolicy:
+      AutoScalingScheduledAction:
+        IgnoreUnmodifiedGroupSizeProperties: true
+    Metadata:
+      aws:cdk:path: swarm-deployment/ue4-swarm-agent/ASG
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Modules: aws-cdk=1.89.0,@aws-cdk/assets=1.91.0,@aws-cdk/aws-applicationautoscaling=1.91.0,@aws-cdk/aws-autoscaling=1.91.0,@aws-cdk/aws-autoscaling-common=1.91.0,@aws-cdk/aws-certificatemanager=1.91.0,@aws-cdk/aws-cloudformation=1.91.0,@aws-cdk/aws-cloudwatch=1.91.0,@aws-cdk/aws-codeguruprofiler=1.91.0,@aws-cdk/aws-ec2=1.91.0,@aws-cdk/aws-ecr=1.91.0,@aws-cdk/aws-ecr-assets=1.91.0,@aws-cdk/aws-efs=1.91.0,@aws-cdk/aws-elasticloadbalancing=1.91.0,@aws-cdk/aws-elasticloadbalancingv2=1.91.0,@aws-cdk/aws-events=1.91.0,@aws-cdk/aws-iam=1.91.0,@aws-cdk/aws-imagebuilder=1.91.0,@aws-cdk/aws-kms=1.91.0,@aws-cdk/aws-lambda=1.91.0,@aws-cdk/aws-logs=1.91.0,@aws-cdk/aws-route53=1.91.0,@aws-cdk/aws-s3=1.91.0,@aws-cdk/aws-s3-assets=1.91.0,@aws-cdk/aws-sns=1.91.0,@aws-cdk/aws-sqs=1.91.0,@aws-cdk/aws-ssm=1.91.0,@aws-cdk/cloud-assembly-schema=1.91.0,@aws-cdk/core=1.91.0,@aws-cdk/custom-resources=1.91.0,@aws-cdk/cx-api=1.91.0,@aws-cdk/region-info=1.91.0,jsii-runtime=Python/3.9.1
+    Metadata:
+      aws:cdk:path: swarm-deployment/CDKMetadata/Default
+Parameters:
+  SsmParameterValueawsserviceamiwindowslatestWindowsServer2019EnglishFullBaseC96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base
+Outputs:
+  ImageID:
+    Description: Swarm AMI ID
+    Value:
+      Fn::GetAtt:
+        - SwarmImage
+        - ImageId
+  CoordinatorPrivateIP:
+    Description: Coordinator Instance Private IP
+    Value:
+      Fn::GetAtt:
+        - ue4swarmcoordinator743D2823
+        - PrivateIp
+
