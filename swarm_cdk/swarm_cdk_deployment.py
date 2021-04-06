@@ -32,7 +32,7 @@ class SwarmDeployment(core.Stack):
         # Instance Role and SSM Managed Policy
         role = iam.Role(self, "SwarmInstanceRole", assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"), inline_policies=[writelogsdocument])
 
-        role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonEC2RoleforSSM"))
+        role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AmazonSSMManagedInstanceCore"))
         role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("EC2InstanceProfileForImageBuilder"))
 
         # Create instance profile that EC2 Image builder can use

@@ -51,6 +51,8 @@ This project uses standard Python CDK project to deploy the Swarm cluster. If yo
 
 When you have CDK and Python installed you can use folling steps to initiate this project:
 
+To initiliazise this project we will need to create a virtualenv that stores dependencies under the `.venv` directory. To create the virtualenv the following commands assumes that there is a `python3` (or `python` for Windows) executable in your path with access to the `venv` package.
+
 Manually create a virtualenv on MacOS and Linux:
 
 ```
@@ -64,10 +66,10 @@ step to activate your virtualenv.
 $ source .env/bin/activate
 ```
 
-If you are a Windows platform you can manually create a virtualenv:
+If you are a Windows platform you can manually create a virtualenv with following ocmmand:
 
 ```
-$ python -m venv .venv
+% python -m venv .venv
 ```
 
 Then you can activate the virtualenv like this:
@@ -123,7 +125,7 @@ Methods of connection existing workstation to this UE4 Swarm cluster:
 
 ## Optional: Create EC2 Instance for Unreal Engine 4 -workstation
 
-If you don't already have an Unreal Engine 4 workstation that you can connect to the VPC via VPN (Site to Site or Client VPN) then you can now launch a new Windows EC2 Instance into the VPC's Public subnets. You can for example launch [NVIDIA's AMI](https://aws.amazon.com/marketplace/search/results/?page=1&filters=instance_types&instance_types=g4dn.xlarge&searchTerms=NVIDIA%20Gaming) with all the drivers or follow for this [guide from Parsec](https://blog.parsec.app/rtx-cloud-gaming-with-the-new-aws-g4-instances-11d1c60c2d09/) on how to create a G4dn based graphical workstation on AWS.
+If you don't already have an Unreal Engine 4 workstation that you can connect to the VPC via VPN (Site to Site or Client VPN) then you can now launch a new Windows EC2 Instance into the VPC's Public subnets. You can for example launch [NVIDIA's AMI](https://aws.amazon.com/marketplace/search/results/?page=1&filters=instance_types&instance_types=g4dn.xlarge&searchTerms=NVIDIA%20Gaming) with all the drivers or follow for this [guide from Parsec](https://blog.parsec.app/rtx-cloud-gaming-with-the-new-aws-g4-instances-11d1c60c2d09/) on how to create a G4dn based graphical workstation on AWS. **Note:** If you have a new AWS account you need to request EC2 limit increase, please see our [EC2 Request a limit increase](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-on-demand-instances.html#vcpu-limits-request-increase) -documentation for more information.
 
 ## Collecting dependencies 
 
