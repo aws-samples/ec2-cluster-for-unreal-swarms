@@ -255,7 +255,7 @@ cdk synth swarm-deployment -e > cloudformation/swarm-deployment.yaml
 
 ## Troubleshooting
 
-If there are trouble when provisioning the infrastructure via the CloudFormation template or running the CDK commands, [please create an issue here](https://github.com/aws-samples/ec2-cluster-for-unreal-swarms/issues).
+If there is trouble when provisioning the infrastructure via the CloudFormation template or running the CDK commands, [please create an issue here](https://github.com/aws-samples/ec2-cluster-for-unreal-swarms/issues).
 
 # Security
 
