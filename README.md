@@ -200,7 +200,7 @@ The Swarm Coordinator will be launched as a single EC2 Instance. The launch will
 The Swarm Agents are going to be launched as Auto Scaling Group. Enabling us to quickly scale the number of nodes up and down. As the Swarm Agents need to be already online and registered when you submit a UE4 build, we can't use any metrics to scale the cluster on demand.
 Instead, you can use for example Schedule, or some script to scale the cluster before submit a job. With a schedule you could for example configure the cluster to scale up to certain number of nodes in the morning and then after office hours scale the cluster back to zero.
 
-The Swarm Agent will also use `User Data` to configure the Windows to start SwarmAgent.exe on bootup and injects a Swarm configuration file into the Instance. This configuration file will set number of threads to equal amount of CPU Core and also will set the Coordinator IP address. You can view the contents of the `User Data` in `assets/start-agent.ps1` - Powershell script.
+The Swarm Agent will also use `User Data` to configure the Windows to start SwarmAgent.exe on boot-up and injects a Swarm configuration file into the Instance. This configuration file will set number of threads to equal amount of CPU Core and also will set the Coordinator IP address. You can view the contents of the `User Data` in `assets/start-agent.ps1` - Powershell script.
 
 # Sending build task to UE4 Swarm on AWS
 
@@ -255,7 +255,7 @@ cdk synth swarm-deployment -e > cloudformation/swarm-deployment.yaml
 
 ## Troubleshooting
 
-Need help here
+If there are trouble when provisioning the infrastructure via the CloudFormation template or running the CDK commands, [please create an issue here](https://github.com/aws-samples/ec2-cluster-for-unreal-swarms/issues).
 
 # Security
 
